@@ -1,0 +1,105 @@
+name: Verify release
+
+# This repository is published *into* by multiplex-cli's release workflow, so
+# the risk here is not a bad commit — it is a release that lands incomplete: a
+# platform whose build failed, a SHA256SUMS that disagrees with the bytes
+# beside it, or an archive missing the alias. Both install paths and the
+# Homebrew formula read these assets directly, so nothing else would notice.
+on:
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to verify, e.g. v0.1.0
+        required: true
+
+jobs:
+  assets:
+    name: every platform, and the digests agree
+    runs-on: ubuntu-latest
+    steps:
+      - name: download the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          mkdir dist && cd dist
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY"
+          ls -1
+
+      - name: all four platforms are present
+        env:
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          missing=0
+          for target in \
+            aarch64-apple-darwin \
+            x86_64-apple-darwin \
+            aarch64-unknown-linux-musl \
+            x86_64-unknown-linux-musl
+          do
+            archive="mpx-$TAG-$target.tar.gz"
+            if [ -f "$archive" ]; then
+              echo "  ok       $archive"
+            else
+              echo "::error::missing $archive"
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - name: digests match the bytes
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          test -f SHA256SUMS || { echo "::error::no SHA256SUMS in the release"; exit 1; }
+          # --ignore-missing would hide exactly the failure we care about.
+          sha256sum -c SHA256SUMS
+          # And every archive must be listed, not just the listed ones present.
+          for archive in *.tar.gz; do
+            grep -q "  $archive\$" SHA256SUMS \
+              || { echo "::error::$archive is not in SHA256SUMS"; exit 1; }
+          done
+
+      - name: archives carry mpx, the alias, and the licence
+        env:
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          for archive in *.tar.gz; do
+            echo "── $archive"
+            listing=$(tar -tzf "$archive")
+            for entry in mpx multiplex README.md LICENSE; do
+              echo "$listing" | grep -qE "/$entry\$" \
+                || { echo "::error::$archive has no $entry"; exit 1; }
+            done
+          done
+
+      - name: the linux x86_64 binary actually runs, and is static
+        env:
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          tar -xzf "mpx-$TAG-x86_64-unknown-linux-musl.tar.gz"
+          cd "mpx-$TAG-x86_64-unknown-linux-musl"
+          ./mpx --version
+          ./multiplex --version
+          version=$(./mpx --version | tr -d '\r' | awk '{print $NF}')
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::binary reports $version but the release is tagged $TAG"
+            exit 1
+          fi
+          # The musl build's whole point is running on hosts with no matching
+          # libc. A dynamically linked one would fail on Alpine only, which is
+          # the worst place to find out.
+          if file ./mpx | grep -q "dynamically linked"; then
+            echo "::error::the musl build is dynamically linked"
+            exit 1
+          fi
+          file ./mpx

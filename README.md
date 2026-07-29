@@ -40,18 +40,18 @@ shasum -a 256 -c SHA256SUMS --ignore-missing
 
 ## Why the source lives elsewhere
 
-`mpx` is built from `multiplex-term/multiplex-cli`, which stays private until
-the app ships. Both install paths above need *anonymous* downloads, so the
-artifacts need a public home of their own — this one. Nothing is published here
-by hand: `multiplex-cli`'s release workflow builds all four platforms on a tag,
-uploads them here, and opens a formula bump against
+`mpx` is built from `multiplex-term/multiplex-cli`, which is not public. Both
+install paths above need *anonymous* downloads, so the artifacts need a public
+home of their own — this one. Nothing is published here by hand:
+`multiplex-cli`'s release workflow builds all four platforms on a tag, uploads
+them here, and opens a formula bump against
 [`multiplex-term/tap`](https://github.com/multiplex-term/tap).
 
 ## Reporting problems
 
-Issues belong on the source repository once it is public. Until then, mail
-[support@multiplexterm.dev](mailto:support@multiplexterm.dev) — include
-`mpx --version` and your platform.
+[Open an issue](../../issues) on this repository — include `mpx --version`
+and your platform. For the app itself, start at
+[multiplexterm.dev](https://multiplexterm.dev).
 
 ## Licence
 

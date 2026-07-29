@@ -45,7 +45,7 @@ install paths above need *anonymous* downloads, so the artifacts need a public
 home of their own — this one. Nothing is published here by hand:
 `multiplex-cli`'s release workflow builds all four platforms on a tag, uploads
 them here, and opens a formula bump against
-[`multiplex-term/tap`](https://github.com/multiplex-term/tap).
+[`multiplex-term/homebrew-tap`](https://github.com/multiplex-term/homebrew-tap).
 
 ## Reporting problems
 

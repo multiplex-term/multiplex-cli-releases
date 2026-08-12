@@ -38,15 +38,6 @@ curl -fsSLO https://github.com/multiplex-term/multiplex-cli-releases/releases/la
 shasum -a 256 -c SHA256SUMS --ignore-missing
 ```
 
-## Why the source lives elsewhere
-
-`mpx` is built from `multiplex-term/multiplex-cli`, which is not public. Both
-install paths above need *anonymous* downloads, so the artifacts need a public
-home of their own — this one. Nothing is published here by hand:
-`multiplex-cli`'s release workflow builds all four platforms on a tag, uploads
-them here, and opens a formula bump against
-[`multiplex-term/homebrew-tap`](https://github.com/multiplex-term/homebrew-tap).
-
 ## Reporting problems
 
 [Open an issue](../../issues) on this repository — include `mpx --version`
